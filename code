@@ -1,0 +1,87 @@
+import org.json.JSONObject;
+import java.util.HashMap;
+
+public class ShamirSecretSharing {
+
+    // Function to decode y values with a given base
+    public static int decodeValue(String base, String value) {
+        return Integer.parseInt(value, Integer.parseInt(base));
+    }
+
+    // Function to apply Lagrange Interpolation and find the constant term 'c'
+    public static double lagrangeInterpolation(HashMap<Integer, Integer> points) {
+        double constantTerm = 0.0;
+
+        for (Integer xi : points.keySet()) {
+            double li = 1.0;
+            for (Integer xj : points.keySet()) {
+                if (!xj.equals(xi)) {
+                    li *= (0.0 - xj) / (xi - xj); // Lagrange basis polynomial
+                }
+            }
+            constantTerm += li * points.get(xi); // Multiply by y value
+        }
+        return constantTerm;
+    }
+
+    // Function to parse JSON and extract values for points
+    public static HashMap<Integer, Integer> extractPoints(JSONObject input) {
+        HashMap<Integer, Integer> points = new HashMap<>();
+        
+        for (String key : input.keySet()) {
+            if (!key.equals("keys")) {
+                JSONObject pointData = input.getJSONObject(key);
+                String base = pointData.getString("base");
+                String value = pointData.getString("value");
+
+                // Decode the y value using the base
+                int decodedY = decodeValue(base, value);
+                int x = Integer.parseInt(key); // Use key as the x-value
+                
+                points.put(x, decodedY);
+            }
+        }
+        return points;
+    }
+
+    public static void main(String[] args) {
+        // Sample input in string format (JSON format)
+        String inputJsonString = "{\n" +
+                "    \"keys\": {\n" +
+                "        \"n\": 4,\n" +
+                "        \"k\": 3\n" +
+                "    },\n" +
+                "    \"1\": {\n" +
+                "        \"base\": \"10\",\n" +
+                "        \"value\": \"4\"\n" +
+                "    },\n" +
+                "    \"2\": {\n" +
+                "        \"base\": \"2\",\n" +
+                "        \"value\": \"111\"\n" +
+                "    },\n" +
+                "    \"3\": {\n" +
+                "        \"base\": \"10\",\n" +
+                "        \"value\": \"12\"\n" +
+                "    },\n" +
+                "    \"6\": {\n" +
+                "        \"base\": \"4\",\n" +
+                "        \"value\": \"213\"\n" +
+                "    }\n" +
+                "}";
+
+        // Parse the input JSON string
+        JSONObject inputJson = new JSONObject(inputJsonString);
+        JSONObject keys = inputJson.getJSONObject("keys");
+        int n = keys.getInt("n");
+        int k = keys.getInt("k");
+
+        // Extract points (x, y) from JSON and decode them
+        HashMap<Integer, Integer> points = extractPoints(inputJson);
+
+        // Find the constant term (c) using Lagrange Interpolation
+        double constantTerm = lagrangeInterpolation(points);
+
+        // Print the result
+        System.out.println("The constant term (c) is: " + constantTerm);
+    }
+}
